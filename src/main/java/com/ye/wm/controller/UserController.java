@@ -9,6 +9,7 @@ import com.ye.wm.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,11 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @Slf4j
 @RequestMapping("/user")
 public class UserController {
+
+    private RedisTemplate redisTemplate;
 
     @Autowired
     private UserService userService;
@@ -37,8 +41,13 @@ public class UserController {
 
           log.info(s);
 
-            session.setAttribute(phone,s);
-            SMSUtils.sendMessage("阿里云短信测试","SMS_154950909",phone,s);
+            //SMSUtils.sendMessage("阿里云短信测试","SMS_154950909",phone,s);
+
+            //session.setAttribute(phone,s);
+
+            redisTemplate.opsForValue().set(phone,s,5,TimeUnit.MINUTES);
+
+
 
             R.success("发送成功");
         }
@@ -54,7 +63,9 @@ return R.error("发送失败");
 
         String code = map.get("code").toString();
 
-        Object scode = session.getAttribute(phone);
+        //Object scode = session.getAttribute(phone);
+
+        Object scode = redisTemplate.opsForValue().get(phone);
 
         if (scode != null && scode.equals(code)){
             LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper();
@@ -71,6 +82,8 @@ return R.error("发送失败");
             }
 
             session.setAttribute("user",user.getId());
+
+            redisTemplate.delete(phone);
 
             return R.success(user);
 
