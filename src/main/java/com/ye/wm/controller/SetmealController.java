@@ -99,6 +99,7 @@ public class SetmealController {
         return R.success("删除成功");
     }
 
+
     @GetMapping("/list")
     @Cacheable(value = "setmealCache",key = "#setmeal.categoryId+'_'+#setmeal.status")
     public R<List<Setmeal>>list(Setmeal setmeal){
